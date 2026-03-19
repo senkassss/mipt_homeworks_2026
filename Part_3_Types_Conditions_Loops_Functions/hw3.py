@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import sys
+
 UNKNOWN_COMMAND_MSG = "Unknown command!"
 NONPOSITIVE_VALUE_MSG = "Value must be grater than zero!"
 INCORRECT_DATE_MSG = "Invalid date!"
@@ -183,11 +185,12 @@ def print_stats(
     if month_diff >= 0:
         print(f"\u0412 этом месяце прибыль составила {month_diff:.2f} рублей")
     else:
-        print(f"\u0412 этом месяце убыток составил {-month_diff:.2f} рублей")
+        month_loss = -month_diff
+        print(f"\u0412 этом месяце убыток составил {month_loss:.2f} рублей")
     print(f"Доходы: {stats[1]:.2f} рублей")
     print(f"Расходы: {stats[2]:.2f} рублей")
     print()
-    print("Детализация (категория: сумма):")
+    print("Детализация")
     if not stats[3]:
         return
 
@@ -276,8 +279,7 @@ def main() -> None:
     incomes: list[IncomeEntry] = []
     costs: list[CostEntry] = []
 
-    while True:
-        raw_line = input()
+    for raw_line in sys.stdin:
         parts = raw_line.split()
 
         if not parts:
