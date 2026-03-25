@@ -79,11 +79,24 @@ jobs:
       - name: Install dependencies
         run: uv sync --group lint --group test
 
+      - name: Resolve folder path
+        run: |
+          INPUT_FOLDER="${{ matrix.folder }}"
+          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's/^part_([0-9]+)_/part\1_/')
+          if [ -d "$INPUT_FOLDER" ]; then
+            echo "TARGET_FOLDER=$INPUT_FOLDER" >> "$GITHUB_ENV"
+          elif [ -d "$NORMALIZED_FOLDER" ]; then
+            echo "TARGET_FOLDER=$NORMALIZED_FOLDER" >> "$GITHUB_ENV"
+          else
+            echo "Folder not found: $INPUT_FOLDER"
+            exit 1
+          fi
+
       - name: Run ruff check
-        run: uv run ruff check "${{ matrix.folder }}"
+        run: uv run ruff check "$TARGET_FOLDER"
 
       - name: Run wemake-python-styleguide
-        run: uv run flake8 "${{ matrix.folder }}"
+        run: uv run flake8 "$TARGET_FOLDER"
 
   typecheck:
     needs: detect-changes
@@ -107,16 +120,29 @@ jobs:
       - name: Install dependencies
         run: uv sync --group lint --group test
 
+      - name: Resolve folder path
+        run: |
+          INPUT_FOLDER="${{ matrix.folder }}"
+          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's/^part_([0-9]+)_/part\1_/')
+          if [ -d "$INPUT_FOLDER" ]; then
+            echo "TARGET_FOLDER=$INPUT_FOLDER" >> "$GITHUB_ENV"
+          elif [ -d "$NORMALIZED_FOLDER" ]; then
+            echo "TARGET_FOLDER=$NORMALIZED_FOLDER" >> "$GITHUB_ENV"
+          else
+            echo "Folder not found: $INPUT_FOLDER"
+            exit 1
+          fi
+
       - name: Run mypy
-        run: uv run mypy "${{ matrix.folder }}"
+        run: uv run mypy "$TARGET_FOLDER"
 
       - name: Run ty (optional)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_ty == 'true' }}
-        run: uv run ty check "${{ matrix.folder }}"
+        run: uv run ty check "$TARGET_FOLDER"
 
       - name: Run pyrefly (optional)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_pyrefly == 'true' }}
-        run: uv run pyrefly check "${{ matrix.folder }}" --project-excludes "**/*.ipynb"
+        run: uv run pyrefly check "$TARGET_FOLDER" --project-excludes "**/*.ipynb"
 
   test:
     needs: detect-changes
@@ -140,10 +166,23 @@ jobs:
       - name: Install dependencies
         run: uv sync --group lint --group test
 
+      - name: Resolve folder path
+        run: |
+          INPUT_FOLDER="${{ matrix.folder }}"
+          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's/^part_([0-9]+)_/part\1_/')
+          if [ -d "$INPUT_FOLDER" ]; then
+            echo "TARGET_FOLDER=$INPUT_FOLDER" >> "$GITHUB_ENV"
+          elif [ -d "$NORMALIZED_FOLDER" ]; then
+            echo "TARGET_FOLDER=$NORMALIZED_FOLDER" >> "$GITHUB_ENV"
+          else
+            echo "Folder not found: $INPUT_FOLDER"
+            exit 1
+          fi
+
       - name: Run pytest
         run: |
-          if [ -d "${{ matrix.folder }}/tests" ]; then
-            uv run pytest "${{ matrix.folder }}/tests" -v
+          if [ -d "$TARGET_FOLDER/tests" ]; then
+            uv run pytest "$TARGET_FOLDER/tests" -v
           else
-            echo "No tests directory found in ${{ matrix.folder }}"
+            echo "No tests directory found in $TARGET_FOLDER"
           fi

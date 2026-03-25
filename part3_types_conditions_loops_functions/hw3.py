@@ -14,7 +14,7 @@ MONTHS_IN_YEAR = 12
 INCOME_COMMAND_PARTS = 3
 COST_COMMAND_PARTS = 4
 STATS_COMMAND_PARTS = 2
-ZERO_AMOUNT = 0.0
+ZERO_AMOUNT = 0
 MIN_DAY = 1
 MIN_MONTH = 1
 SPLIT_MARKER = "::"
@@ -209,8 +209,8 @@ def update_category_total(
 def collect_stats(
     report_date: Date,
 ) -> tuple[float, float, CategoriesTotals]:
-    total_income = ZERO_AMOUNT
-    total_cost = ZERO_AMOUNT
+    total_income = float(ZERO_AMOUNT)
+    total_cost = float(ZERO_AMOUNT)
     category_details: CategoriesTotals = {}
 
     for operation_data in financial_transactions_storage:
@@ -235,8 +235,8 @@ def collect_operation_stats(
     category_raw = operation_data.get(CATEGORY_KEY)
     if isinstance(category_raw, str):
         update_category_total(category_details, category_raw, amount)
-        return ZERO_AMOUNT, amount
-    return amount, ZERO_AMOUNT
+        return float(ZERO_AMOUNT), amount
+    return amount, float(ZERO_AMOUNT)
 
 
 def format_categories(category_details: CategoriesTotals) -> str:
