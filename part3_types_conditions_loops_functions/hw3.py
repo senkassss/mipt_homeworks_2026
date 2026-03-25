@@ -14,7 +14,7 @@ MONTHS_IN_YEAR = 12
 INCOME_COMMAND_PARTS = 3
 COST_COMMAND_PARTS = 4
 STATS_COMMAND_PARTS = 2
-ZERO_AMOUNT = 0
+ZERO_AMOUNT = 0.0
 MIN_DAY = 1
 MIN_MONTH = 1
 SPLIT_MARKER = "::"
@@ -104,13 +104,18 @@ def extract_date(maybe_dt: str) -> Date | None:
 def date_less_than(left: Date, right: Date) -> bool:
     left_day, left_month, left_year = left
     right_day, right_month, right_year = right
-    return (left_year, left_month, left_day) < (right_year, right_month, right_day)
+    left_date = (left_year, left_month, left_day)
+    right_date = (right_year, right_month, right_day)
+    return left_date < right_date
 
 
 def is_valid_category(category_name: str) -> bool:
     if SPLIT_MARKER not in category_name:
         return False
-    common_category, target_category = category_name.split(SPLIT_MARKER, maxsplit=1)
+    common_category, target_category = category_name.split(
+        SPLIT_MARKER,
+        maxsplit=1,
+    )
     if common_category not in EXPENSE_CATEGORIES:
         return False
     return target_category in EXPENSE_CATEGORIES[common_category]
@@ -130,7 +135,9 @@ def income_handler(amount: float, income_date: str) -> str:
         append_empty_record()
         return INCORRECT_DATE_MSG
 
-    financial_transactions_storage.append({AMOUNT_KEY: amount, DATE_KEY: parsed_income_date})
+    financial_transactions_storage.append(
+        {AMOUNT_KEY: amount, DATE_KEY: parsed_income_date},
+    )
     return OP_SUCCESS_MSG
 
 
@@ -149,7 +156,11 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
         return NOT_EXISTS_CATEGORY
 
     financial_transactions_storage.append(
-        {CATEGORY_KEY: category_name, AMOUNT_KEY: amount, DATE_KEY: parsed_income_date},
+        {
+            CATEGORY_KEY: category_name,
+            AMOUNT_KEY: amount,
+            DATE_KEY: parsed_income_date,
+        },
     )
     return OP_SUCCESS_MSG
 
@@ -157,8 +168,7 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
 def cost_categories_handler() -> str:
     categories: list[str] = []
     for category, subs in EXPENSE_CATEGORIES.items():
-        for sub in subs:
-            categories.append(f"{category}{SPLIT_MARKER}{sub}")
+        categories.extend(f"{category}{SPLIT_MARKER}{sub}" for sub in subs)
     return "\n".join(categories)
 
 
@@ -170,7 +180,10 @@ def parse_storage_date(date_data: Any) -> Date | None:
     return None
 
 
-def can_use_operation_date(operation_data: Transaction, report_date: Date) -> bool:
+def can_use_operation_date(
+    operation_data: Transaction,
+    report_date: Date,
+) -> bool:
     if DATE_KEY not in operation_data:
         return False
     operation_date = parse_storage_date(operation_data[DATE_KEY])
@@ -180,16 +193,22 @@ def can_use_operation_date(operation_data: Transaction, report_date: Date) -> bo
 
 
 def resolve_operation_amount(operation_data: Transaction) -> float:
-    amount_raw = operation_data[AMOUNT_KEY] if AMOUNT_KEY in operation_data else ZERO_AMOUNT
+    amount_raw = operation_data.get(AMOUNT_KEY, ZERO_AMOUNT)
     return float(amount_raw)
 
 
-def update_category_total(category_details: CategoriesTotals, category: str, amount: float) -> None:
-    previous_category_amount = category_details[category] if category in category_details else ZERO_AMOUNT
+def update_category_total(
+    category_details: CategoriesTotals,
+    category: str,
+    amount: float,
+) -> None:
+    previous_category_amount = category_details.get(category, ZERO_AMOUNT)
     category_details[category] = round(previous_category_amount + amount, 2)
 
 
-def collect_stats(report_date: Date) -> tuple[float, float, CategoriesTotals]:
+def collect_stats(
+    report_date: Date,
+) -> tuple[float, float, CategoriesTotals]:
     total_income = ZERO_AMOUNT
     total_cost = ZERO_AMOUNT
     category_details: CategoriesTotals = {}
@@ -198,14 +217,20 @@ def collect_stats(report_date: Date) -> tuple[float, float, CategoriesTotals]:
         if not can_use_operation_date(operation_data, report_date):
             continue
 
-        income_change, cost_change = collect_operation_stats(operation_data, category_details)
+        income_change, cost_change = collect_operation_stats(
+            operation_data,
+            category_details,
+        )
         total_income += income_change
         total_cost += cost_change
 
     return total_income, total_cost, category_details
 
 
-def collect_operation_stats(operation_data: Transaction, category_details: CategoriesTotals) -> StatDelta:
+def collect_operation_stats(
+    operation_data: Transaction,
+    category_details: CategoriesTotals,
+) -> StatDelta:
     amount = resolve_operation_amount(operation_data)
     category_raw = operation_data.get(CATEGORY_KEY)
     if isinstance(category_raw, str):
@@ -226,7 +251,9 @@ def stats_handler(report_date: str) -> str:
     if parsed_report_date is None:
         return INCORRECT_DATE_MSG
 
-    total_income, total_cost, category_details = collect_stats(parsed_report_date)
+    total_income, total_cost, category_details = collect_stats(
+        parsed_report_date,
+    )
 
     rounded_cost = round(total_cost, 2)
     rounded_income = round(total_income, 2)
