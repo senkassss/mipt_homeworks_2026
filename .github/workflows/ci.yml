@@ -82,15 +82,24 @@ jobs:
       - name: Resolve folder path
         run: |
           INPUT_FOLDER="${{ matrix.folder }}"
-          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's/^part_([0-9]+)_/part\1_/')
-          if [ -d "$INPUT_FOLDER" ]; then
-            echo "TARGET_FOLDER=$INPUT_FOLDER" >> "$GITHUB_ENV"
-          elif [ -d "$NORMALIZED_FOLDER" ]; then
-            echo "TARGET_FOLDER=$NORMALIZED_FOLDER" >> "$GITHUB_ENV"
-          else
-            echo "Folder not found: $INPUT_FOLDER"
-            exit 1
-          fi
+          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's%^\\./%%; s/^part_([0-9]+)_/part\1_/')
+          CANDIDATES=(
+            "$INPUT_FOLDER"
+            "$NORMALIZED_FOLDER"
+            "mipt_homeworks_2026/$INPUT_FOLDER"
+            "mipt_homeworks_2026/$NORMALIZED_FOLDER"
+          )
+          for CANDIDATE in "${CANDIDATES[@]}"; do
+            if [ -d "$CANDIDATE" ]; then
+              echo "TARGET_FOLDER=$CANDIDATE" >> "$GITHUB_ENV"
+              echo "Resolved folder: $CANDIDATE"
+              exit 0
+            fi
+          done
+          echo "Folder not found. Input=$INPUT_FOLDER Normalized=$NORMALIZED_FOLDER"
+          echo "Checked candidates:"
+          printf '%s\n' "${CANDIDATES[@]}"
+          exit 1
 
       - name: Run ruff check
         run: uv run ruff check "$TARGET_FOLDER"
@@ -123,15 +132,24 @@ jobs:
       - name: Resolve folder path
         run: |
           INPUT_FOLDER="${{ matrix.folder }}"
-          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's/^part_([0-9]+)_/part\1_/')
-          if [ -d "$INPUT_FOLDER" ]; then
-            echo "TARGET_FOLDER=$INPUT_FOLDER" >> "$GITHUB_ENV"
-          elif [ -d "$NORMALIZED_FOLDER" ]; then
-            echo "TARGET_FOLDER=$NORMALIZED_FOLDER" >> "$GITHUB_ENV"
-          else
-            echo "Folder not found: $INPUT_FOLDER"
-            exit 1
-          fi
+          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's%^\\./%%; s/^part_([0-9]+)_/part\1_/')
+          CANDIDATES=(
+            "$INPUT_FOLDER"
+            "$NORMALIZED_FOLDER"
+            "mipt_homeworks_2026/$INPUT_FOLDER"
+            "mipt_homeworks_2026/$NORMALIZED_FOLDER"
+          )
+          for CANDIDATE in "${CANDIDATES[@]}"; do
+            if [ -d "$CANDIDATE" ]; then
+              echo "TARGET_FOLDER=$CANDIDATE" >> "$GITHUB_ENV"
+              echo "Resolved folder: $CANDIDATE"
+              exit 0
+            fi
+          done
+          echo "Folder not found. Input=$INPUT_FOLDER Normalized=$NORMALIZED_FOLDER"
+          echo "Checked candidates:"
+          printf '%s\n' "${CANDIDATES[@]}"
+          exit 1
 
       - name: Run mypy
         run: uv run mypy "$TARGET_FOLDER"
@@ -169,15 +187,24 @@ jobs:
       - name: Resolve folder path
         run: |
           INPUT_FOLDER="${{ matrix.folder }}"
-          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's/^part_([0-9]+)_/part\1_/')
-          if [ -d "$INPUT_FOLDER" ]; then
-            echo "TARGET_FOLDER=$INPUT_FOLDER" >> "$GITHUB_ENV"
-          elif [ -d "$NORMALIZED_FOLDER" ]; then
-            echo "TARGET_FOLDER=$NORMALIZED_FOLDER" >> "$GITHUB_ENV"
-          else
-            echo "Folder not found: $INPUT_FOLDER"
-            exit 1
-          fi
+          NORMALIZED_FOLDER=$(echo "$INPUT_FOLDER" | tr '[:upper:]' '[:lower:]' | sed -E 's%^\\./%%; s/^part_([0-9]+)_/part\1_/')
+          CANDIDATES=(
+            "$INPUT_FOLDER"
+            "$NORMALIZED_FOLDER"
+            "mipt_homeworks_2026/$INPUT_FOLDER"
+            "mipt_homeworks_2026/$NORMALIZED_FOLDER"
+          )
+          for CANDIDATE in "${CANDIDATES[@]}"; do
+            if [ -d "$CANDIDATE" ]; then
+              echo "TARGET_FOLDER=$CANDIDATE" >> "$GITHUB_ENV"
+              echo "Resolved folder: $CANDIDATE"
+              exit 0
+            fi
+          done
+          echo "Folder not found. Input=$INPUT_FOLDER Normalized=$NORMALIZED_FOLDER"
+          echo "Checked candidates:"
+          printf '%s\n' "${CANDIDATES[@]}"
+          exit 1
 
       - name: Run pytest
         run: |
