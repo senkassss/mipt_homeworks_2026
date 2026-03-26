@@ -297,6 +297,7 @@ def process_income_command(parts: list[str]) -> str:
     parsed_amount = parse_amount(parts[1])
     if parsed_amount is None:
         return NONPOSITIVE_VALUE_MSG
+
     return income_handler(parsed_amount, parts[2])
 
 
