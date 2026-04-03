@@ -11,7 +11,6 @@ MONTHS_IN_YEAR = 12
 INCOME_COMMAND_PARTS = 3
 COST_COMMAND_PARTS = 4
 STATS_COMMAND_PARTS = 2
-ZERO_AMOUNT = 0.0
 MIN_DAY = 1
 MIN_MONTH = 1
 SPLIT_MARKER = "::"
@@ -122,7 +121,7 @@ def income_handler(amount: float, income_date: str) -> str:
     financial_transactions_storage.append({})
     operation_data = financial_transactions_storage[-1]
 
-    if amount <= ZERO_AMOUNT:
+    if amount <= 0:
         return NONPOSITIVE_VALUE_MSG
 
     parsed_income_date = extract_date(income_date)
@@ -138,7 +137,7 @@ def cost_handler(category_name: str, amount: float, income_date: str) -> str:
     financial_transactions_storage.append({})
     operation_data = financial_transactions_storage[-1]
 
-    if amount <= ZERO_AMOUNT:
+    if amount <= 0:
         return NONPOSITIVE_VALUE_MSG
 
     parsed_income_date = extract_date(income_date)
@@ -182,14 +181,14 @@ def can_use_operation_date(
 
 
 def resolve_operation_amount(operation_data: Transaction) -> float:
-    amount_raw = operation_data.get(AMOUNT_KEY, ZERO_AMOUNT)
+    amount_raw = operation_data.get(AMOUNT_KEY, 0)
     if isinstance(amount_raw, (int, float)):
         return float(amount_raw)
     if isinstance(amount_raw, str):
         parsed_amount = parse_amount(amount_raw)
         if parsed_amount is not None:
             return parsed_amount
-    return ZERO_AMOUNT
+    return 0
 
 
 def update_category_total(
@@ -197,15 +196,15 @@ def update_category_total(
     category: str,
     amount: float,
 ) -> None:
-    previous_category_amount = category_details.get(category, ZERO_AMOUNT)
+    previous_category_amount = category_details.get(category, 0)
     category_details[category] = round(previous_category_amount + amount, 2)
 
 
 def collect_stats(
     report_date: Date,
 ) -> tuple[float, float, CategoriesTotals]:
-    total_income = ZERO_AMOUNT
-    total_cost = ZERO_AMOUNT
+    total_income: float = 0
+    total_cost: float = 0
     category_details: CategoriesTotals = {}
 
     for operation_data in financial_transactions_storage:
@@ -230,8 +229,8 @@ def collect_operation_stats(
     category_raw = operation_data.get(CATEGORY_KEY)
     if isinstance(category_raw, str):
         update_category_total(category_details, category_raw, amount)
-        return ZERO_AMOUNT, amount
-    return amount, ZERO_AMOUNT
+        return 0, amount
+    return amount, 0
 
 
 def format_categories(category_details: CategoriesTotals) -> str:
