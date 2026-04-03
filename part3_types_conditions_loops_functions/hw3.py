@@ -327,14 +327,15 @@ def process_command(parts: list[str]) -> str:
 
 
 def main() -> None:
-    for raw_line in open(0):
-        stripped_line = raw_line.strip()
-        if not stripped_line:
-            print(UNKNOWN_COMMAND_MSG)
-            continue
+    with open(0) as input_stream:
+        for raw_line in input_stream:
+            stripped_line = raw_line.strip()
+            if not stripped_line:
+                print(UNKNOWN_COMMAND_MSG)
+                continue
 
-        parts = stripped_line.split()
-        print(process_command(parts))
+            parts = stripped_line.split()
+            print(process_command(parts))
 
 
 if __name__ == "__main__":
