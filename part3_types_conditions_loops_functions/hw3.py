@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-import sys
-from typing import Any
-
 UNKNOWN_COMMAND_MSG = "Unknown command!"
 NONPOSITIVE_VALUE_MSG = "Value must be grater than zero!"
 INCORRECT_DATE_MSG = "Invalid date!"
@@ -14,7 +11,7 @@ MONTHS_IN_YEAR = 12
 INCOME_COMMAND_PARTS = 3
 COST_COMMAND_PARTS = 4
 STATS_COMMAND_PARTS = 2
-ZERO_AMOUNT = 0
+ZERO_AMOUNT = 0.0
 MIN_DAY = 1
 MIN_MONTH = 1
 SPLIT_MARKER = "::"
@@ -24,7 +21,7 @@ AMOUNT_KEY = "amount"
 CATEGORY_KEY = "category"
 
 Date = tuple[int, int, int]
-Transaction = dict[str, Any]
+Transaction = dict[str, object]
 CategoriesTotals = dict[str, float]
 StatDelta = tuple[float, float]
 
@@ -49,7 +46,7 @@ def is_leap_year(year: int) -> bool:
         return True
     if year % 100 == 0:
         return False
-    return (year % 4) == 0
+    return year % 4 == 0
 
 
 def parse_date_parts(parts: list[str]) -> Date | None:
@@ -121,47 +118,39 @@ def is_valid_category(category_name: str) -> bool:
     return target_category in EXPENSE_CATEGORIES[common_category]
 
 
-def append_empty_record() -> None:
-    financial_transactions_storage.append({})
-
-
 def income_handler(amount: float, income_date: str) -> str:
+    financial_transactions_storage.append({})
+    operation_data = financial_transactions_storage[-1]
+
     if amount <= ZERO_AMOUNT:
-        append_empty_record()
         return NONPOSITIVE_VALUE_MSG
 
     parsed_income_date = extract_date(income_date)
     if parsed_income_date is None:
-        append_empty_record()
         return INCORRECT_DATE_MSG
 
-    financial_transactions_storage.append(
-        {AMOUNT_KEY: amount, DATE_KEY: parsed_income_date},
-    )
+    operation_data[AMOUNT_KEY] = amount
+    operation_data[DATE_KEY] = parsed_income_date
     return OP_SUCCESS_MSG
 
 
 def cost_handler(category_name: str, amount: float, income_date: str) -> str:
+    financial_transactions_storage.append({})
+    operation_data = financial_transactions_storage[-1]
+
     if amount <= ZERO_AMOUNT:
-        append_empty_record()
         return NONPOSITIVE_VALUE_MSG
 
     parsed_income_date = extract_date(income_date)
     if parsed_income_date is None:
-        append_empty_record()
         return INCORRECT_DATE_MSG
 
     if not is_valid_category(category_name):
-        append_empty_record()
         return NOT_EXISTS_CATEGORY
 
-    financial_transactions_storage.append(
-        {
-            CATEGORY_KEY: category_name,
-            AMOUNT_KEY: amount,
-            DATE_KEY: parsed_income_date,
-        },
-    )
+    operation_data[CATEGORY_KEY] = category_name
+    operation_data[AMOUNT_KEY] = amount
+    operation_data[DATE_KEY] = parsed_income_date
     return OP_SUCCESS_MSG
 
 
@@ -172,7 +161,7 @@ def cost_categories_handler() -> str:
     return "\n".join(categories)
 
 
-def parse_storage_date(date_data: Any) -> Date | None:
+def parse_storage_date(date_data: object) -> Date | None:
     if isinstance(date_data, tuple) and len(date_data) == DATE_PARTS_COUNT:
         return date_data
     if isinstance(date_data, str):
@@ -194,7 +183,13 @@ def can_use_operation_date(
 
 def resolve_operation_amount(operation_data: Transaction) -> float:
     amount_raw = operation_data.get(AMOUNT_KEY, ZERO_AMOUNT)
-    return float(amount_raw)
+    if isinstance(amount_raw, (int, float)):
+        return float(amount_raw)
+    if isinstance(amount_raw, str):
+        parsed_amount = parse_amount(amount_raw)
+        if parsed_amount is not None:
+            return parsed_amount
+    return ZERO_AMOUNT
 
 
 def update_category_total(
@@ -209,8 +204,8 @@ def update_category_total(
 def collect_stats(
     report_date: Date,
 ) -> tuple[float, float, CategoriesTotals]:
-    total_income = float(ZERO_AMOUNT)
-    total_cost = float(ZERO_AMOUNT)
+    total_income = ZERO_AMOUNT
+    total_cost = ZERO_AMOUNT
     category_details: CategoriesTotals = {}
 
     for operation_data in financial_transactions_storage:
@@ -235,8 +230,8 @@ def collect_operation_stats(
     category_raw = operation_data.get(CATEGORY_KEY)
     if isinstance(category_raw, str):
         update_category_total(category_details, category_raw, amount)
-        return float(ZERO_AMOUNT), amount
-    return amount, float(ZERO_AMOUNT)
+        return ZERO_AMOUNT, amount
+    return amount, ZERO_AMOUNT
 
 
 def format_categories(category_details: CategoriesTotals) -> str:
@@ -320,17 +315,19 @@ def process_stats_command(parts: list[str]) -> str:
 
 def process_command(parts: list[str]) -> str:
     command = parts[0]
-    if command == "income":
-        return process_income_command(parts)
-    if command == "cost":
-        return process_cost_command(parts)
-    if command == "stats":
-        return process_stats_command(parts)
-    return UNKNOWN_COMMAND_MSG
+    match command:
+        case "income":
+            return process_income_command(parts)
+        case "cost":
+            return process_cost_command(parts)
+        case "stats":
+            return process_stats_command(parts)
+        case _:
+            return UNKNOWN_COMMAND_MSG
 
 
 def main() -> None:
-    for raw_line in sys.stdin:
+    for raw_line in open(0):
         stripped_line = raw_line.strip()
         if not stripped_line:
             print(UNKNOWN_COMMAND_MSG)
