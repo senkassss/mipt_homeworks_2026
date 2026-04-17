@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, TypeVar, cast, overload
+from typing import Any, Self, TypeVar, overload
 
 from part4_oop.interfaces import Cache, HasCache, Policy, Storage
 
@@ -87,7 +87,8 @@ class LFUPolicy(Policy[K]):
     _key_counter: dict[K, int] = field(default_factory=dict, init=False)
 
     def register_access(self, key: K) -> None:
-        self._key_counter[key] = self._key_counter.get(key, 0) + 1
+        current_count = self._key_counter.pop(key, 0)
+        self._key_counter[key] = current_count + 1
 
     def get_key_to_evict(self) -> K | None:
         if len(self._key_counter) > self.capacity:
@@ -148,20 +149,20 @@ class CachedProperty[V]:
         self.func = func
 
     @overload
-    def __get__(self, instance: None, owner: type) -> V: ...
+    def __get__(self, instance: None, owner: type) -> Self: ...
 
     @overload
-    def __get__(self, instance: HasCache[Any, Any], owner: type) -> V: ...
+    def __get__(self, instance: HasCache[str, V], owner: type) -> V: ...
 
-    def __get__(self, instance: HasCache[Any, Any] | None, owner: type) -> V:
+    def __get__(self, instance: HasCache[str, V] | None, owner: type) -> Any:
         if instance is None:
-            return cast("V", self)
+            return self
         cache = instance.cache
         cache_key = f"_cached_property_{id(self)}"
         if cache.exists(cache_key):
             cached_value = cache.get(cache_key)
             if cached_value is not None:
-                return cast("V", cached_value)
+                return cached_value
         value = self.func(instance)
         cache.set(cache_key, value)
         return value
